@@ -1,11 +1,11 @@
 // JSON created from the table "DEL_TB_Swieta" from the database "Dolphin_Operacje"
-interface HolidaysDays {
+export interface HolidayDays {
     swi_Data: string;
     swi_Nazwa: string;
     swi_DzienWolny: string;
 }
 
-export const holidaysDays: HolidaysDays[] = [
+export const holidayDays: HolidayDays[] = [
     {
         swi_Data: '2000-01-01T00:00:00',
         swi_Nazwa: 'Nowy Rok',
