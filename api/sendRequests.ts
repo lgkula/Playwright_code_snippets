@@ -5,7 +5,7 @@ import {
 } from '../jsonFileController';
 import { getAuthToken } from './apiToken';
 
-export const getGetNotesResponse = async (bodyData): Promise<any[]> => {
+export const postXResponse = async (bodyData): Promise<any[]> => {
     const accessTokenObjectFilePath = '../playwright/.auth/accessToken.json';
 
     if (!(await checkIfFileExists(accessTokenObjectFilePath))) {
@@ -39,4 +39,32 @@ export const getGetNotesResponse = async (bodyData): Promise<any[]> => {
     ).toBe(200);
 
     return await response.json();
+};
+
+export const getXResponse = async (par: number[]): Promise<any[]> => {
+    const apiUrl: string = `${
+        process.env.API_URL
+    }common/basic-case-data?caseIds=${par[0]}${par
+        .slice(1)
+        .map((num) => `&caseIds=${num}`)
+        .join('')}`;
+    const context = await request.newContext({ ignoreHTTPSErrors: true });
+    const response = await context.get(apiUrl);
+    expect(
+        response.status(),
+        'Checking that the endpoint is working and returning status code 200 in response',
+    ).toBe(200);
+    const responseJson: any[] = await response.json();
+    expect(
+        responseJson.length,
+        'Checking that the number of objects in the answer matches the number of arguments given',
+    ).toEqual(par.length);
+    return mapXResponse(responseJson);
+};
+
+const mapXResponse = (data: any[]): any[] => {
+    return data.map((item) => ({
+        nowaNazwaPola: item.nazwaPolaApi,
+        nowaNazwaPola1: item.nazwaPolaApi1,
+    }));
 };
