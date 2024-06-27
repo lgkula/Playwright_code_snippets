@@ -5,14 +5,30 @@ import {
 } from '../jsonFileController';
 import { getAuthToken } from './apiToken';
 
-export const postXResponse = async (bodyData): Promise<any[]> => {
+interface GetNotesResponse {
+    caseId: number;
+    id: number;
+    typeId: number;
+    date: string;
+    creationDate: string;
+    employeeId: number;
+    content: string;
+    attachmentId: number;
+    extensionId: number;
+}
+
+export const sendRequest = async (
+    method: 'get' | 'post',
+    endpointUrl: string,
+    bodyData?,
+): Promise<GetNotesResponse[]> => {
     const accessTokenObjectFilePath = '../playwright/.auth/accessToken.json';
 
     if (!(await checkIfFileExists(accessTokenObjectFilePath))) {
         await getAuthToken();
     }
 
-    const apiUrl: string = `${process.env.ENFORCEMENT_GLOBAL_API_URL}Note/get-notes`;
+    const apiUrl: string = `${process.env.ENFORCEMENT_GLOBAL_API_URL}${endpointUrl}`;
     const context = await request.newContext();
 
     const sendPostRequest = async (bodyData): Promise<APIResponse> => {
@@ -26,11 +42,31 @@ export const postXResponse = async (bodyData): Promise<any[]> => {
         return await context.post(apiUrl, requestData);
     };
 
-    let response = await sendPostRequest(bodyData);
+    const sendGetRequest = async (): Promise<APIResponse> => {
+        const authorizationHeaders = await readTestDataFromJsonFile(
+            accessTokenObjectFilePath,
+        );
+        const requestData: any = {
+            headers: authorizationHeaders,
+        };
+        return await context.post(apiUrl, requestData);
+    };
 
-    if (response.status() >= 400) {
-        await getAuthToken();
+    let response;
+    if (method === 'post') {
         response = await sendPostRequest(bodyData);
+
+        if (response.status() >= 400) {
+            await getAuthToken();
+            response = await sendPostRequest(bodyData);
+        }
+    } else {
+        response = await sendGetRequest();
+
+        if (response.status() >= 400) {
+            await getAuthToken();
+            response = await sendGetRequest();
+        }
     }
 
     expect(
@@ -39,32 +75,4 @@ export const postXResponse = async (bodyData): Promise<any[]> => {
     ).toBe(200);
 
     return await response.json();
-};
-
-export const getXResponse = async (par: number[]): Promise<any[]> => {
-    const apiUrl: string = `${
-        process.env.API_URL
-    }common/basic-case-data?caseIds=${par[0]}${par
-        .slice(1)
-        .map((num) => `&caseIds=${num}`)
-        .join('')}`;
-    const context = await request.newContext({ ignoreHTTPSErrors: true });
-    const response = await context.get(apiUrl);
-    expect(
-        response.status(),
-        'Checking that the endpoint is working and returning status code 200 in response',
-    ).toBe(200);
-    const responseJson: any[] = await response.json();
-    expect(
-        responseJson.length,
-        'Checking that the number of objects in the answer matches the number of arguments given',
-    ).toEqual(par.length);
-    return mapXResponse(responseJson);
-};
-
-const mapXResponse = (data: any[]): any[] => {
-    return data.map((item) => ({
-        nowaNazwaPola: item.nazwaPolaApi,
-        nowaNazwaPola1: item.nazwaPolaApi1,
-    }));
 };
