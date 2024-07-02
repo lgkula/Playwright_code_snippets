@@ -1,7 +1,6 @@
 import * as fs from 'node:fs/promises';
 import path from 'path';
 import { expect } from '@playwright/test';
-import { pwLogger } from './pwLogger';
 
 export const removeOldFile = async (fullFilePath: string): Promise<void> => {
     await fs.rm(fullFilePath, { force: true });
@@ -21,14 +20,26 @@ export const writeObjectToFile = async (
             JSON.stringify(objectToSave, null, 2),
             'utf-8',
         );
-        // await fs.access(filePath);
         expect(
             await checkIfFileExists(fullFilePath),
             `Check that file ${filePath} exist`,
         ).toBeTruthy();
     } else {
-        pwLogger('No new data, new object not saved to file', 'info', 'all');
+        console.log('No new data, new object not saved to file', 'info', 'all');
     }
+};
+
+export const writeDataToFile = async (
+    dataToSave,
+    filePath: string,
+): Promise<void> => {
+    const fullFilePath = path.join(__dirname, `${filePath}`);
+        // await removeOldFile(fullFilePath);
+        await fs.appendFile(fullFilePath, dataToSave, 'utf-8');
+        expect(
+            await checkIfFileExists(fullFilePath),
+            `Check that file ${filePath} exist`,
+        ).toBeTruthy();
 };
 
 export const writeResponseToFile = async (
@@ -48,13 +59,12 @@ export const writeResponseToFile = async (
             JSON.stringify(response, null, 2),
             'utf-8',
         );
-        // await fs.access(filePath);
         expect(
             await checkIfFileExists(fullFilePath),
             `Check that file ${filePath} exist`,
         ).toBeTruthy();
     } else {
-        pwLogger('No cases data to write in file', 'error', 'important');
+        console.log('No cases data to write in file', 'error', 'important');
     }
 };
 
@@ -116,13 +126,13 @@ export const writeQueryResultToFile = async (
             'utf-8',
         );
 
-        pwLogger(
+        console.log(
             `Number of records imported from the database: ${response.length}`,
             'info',
             'all',
         );
     } else {
-        pwLogger('No records', 'error', 'important');
+        console.log('No records', 'error', 'important');
     }
 };
 
